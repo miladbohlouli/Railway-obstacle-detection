@@ -4,21 +4,15 @@ def get_args():
     parser = argparse.ArgumentParser(description='VIPriors Segmentation baseline training script')
 
     # model architecture & checkpoint
-    parser.add_argument('--load',
-                        default=False, type=bool, help='whether to load from saved model')
-    parser.add_argument('--model', metavar='[DeepLabv3_resnet50, DeepLabv3_resnet101, fcnet]',
-                        default='fcnet', type=str, help='model')
-    parser.add_argument('--train',
-                        default=False, type=bool, help='to train the model from scratch')
+    parser.add_argument('--model', metavar='[fastercnn_resnet50_fpn]',
+                        default='fastercnn_resnet50_fpn', type=str, help='model')
     parser.add_argument('--save_path', metavar='path/to/save_results', default='saved_results',
                         type=str, help='path to results saved')
-    parser.add_argument('--weights', metavar='path/to/checkpoint', default=None,
-                        type=str, help='resume training from checkpoint')
     parser.add_argument('--norm', metavar='[batch, instance, evo, group]', default='batch',
                         type=str, help='replace batch norm with other norm')
 
     # data loading
-    parser.add_argument('--dataset_path', metavar='path/to/minicity/root', default='./dataset',
+    parser.add_argument('--source_video', metavar='path/to/source/video', default='./sample_videos/1.mp4',
                         type=str, help='path to dataset (ends with /minicity)')
     parser.add_argument('--pin_memory', metavar='[True,False]', default=True,
                         type=bool, help='pin memory on GPU')
@@ -26,44 +20,21 @@ def get_args():
                         help='number of dataloader workers')
 
     # data augmentation hyper-parameters
-    parser.add_argument('--colorjitter_factor', metavar='0.3', default=0.3,
-                        type=float, help='data augmentation: color jitter factor')
-    parser.add_argument('--hflip', metavar='[True,False]', default=True,
-                        type=float, help='data augmentation: random horizontal flip')
-    parser.add_argument('--crop_size', default=[224, 224], nargs='+', type=int, help='data augmentation: random crop size')
-    parser.add_argument('--train_size', default=[780, 780], nargs='+', type=int, help='image size during training')
-    parser.add_argument('--test_size', default=[780, 780], nargs='+', type=int, help='image size during test')
+    parser.add_argument('--image_size', default=[50, 50], nargs='+', type=int, help='image size during training')
     parser.add_argument('--dataset_mean', metavar='[0.485, 0.456, 0.406]',
                         default=[0.485, 0.456, 0.406], type=list,
                         help='mean for normalization')
     parser.add_argument('--dataset_std', metavar='[0.229, 0.224, 0.225]',
                         default=[0.229, 0.224, 0.225], type=list,
                         help='std for normalization')
+    parser.add_argument('--threshold', type=float, default=0.9, help="The threshold the boxes will be chosen with")
 
-    # training hyper-parameters
-    parser.add_argument('--batch_size', default=8, type=int, help='batch size')
-    parser.add_argument('--lr_init', metavar='1e-2', default=1e-2, type=float,
-                        help='initial learning rate')
-    parser.add_argument('--lr_momentum', metavar='0.9', default=0.9, type=float,
-                        help='momentum for SGD optimizer')
-    parser.add_argument('--lr_weight_decay', metavar='1e-4', default=1e-4, type=float,
-                        help='weight decay for SGD optimizer')
-    parser.add_argument('--epochs', metavar='1', default=1, type=int,
-                        help='number of training epochs')
-    parser.add_argument('--seed', metavar='42', default=None, type=int,
-                        help='random seed to use')
-    parser.add_argument('--loss', metavar='[ce, weighted_ce, focal]', default='ce',
-                        type=str, help='loss criterion')
-    parser.add_argument('--focal_gamma', default=2.0, type=float, help='initial learning rate')
 
-    # additional training tricks
-    parser.add_argument('--cutmix', action='store_true', help='cutmix augmentation')
-    parser.add_argument('--copyblob', action='store_true', help='copyblob augmentation')
-
-    # inference options
-    parser.add_argument('--predict', action='store_true')
-    parser.add_argument('--mst', action='store_true', help='multi-scale testing')
-    #parser.add_argument('--minorcrop', action='store_true', help='minor crop augmentation')
+    # appearance parameeters
+    parser.add_argument('--text_size', default=3, help='Text size used for writing on the images')
+    parser.add_argument('--text_thickness', default=3, help='Thickness of the written text')
+    parser.add_argument('--rectangle_thickness', default=3, help='Thickness of the rectangle border')
+    parser.add_argument('--color', default=(0, 255, 0), help='color for drawing on the image')
 
     args = parser.parse_args()
     return args

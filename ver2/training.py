@@ -5,99 +5,44 @@ import sys
 from helpers import iouCalc, visim, vislbl
 import os
 import cv2
+from arguments import get_args
+from utils import get_model, get_dataloader, get_transforms, draw_boxes, get_device, show_frame, show_video, save_video
+from dataset import dataset, COCO_INSTANCE_CATEGORY_NAMES
 
 
-def train_epoch(model, data_loader, optimizer, criterion, scheduler, device, args):
-    if args.crop_size is not None:
-        res = args.crop_size[0] * args.crop_size[1]
-    else:
-        res = args.train_size[0] * args.train_size[1]
-
-    # Set model in training mode
-    model.train()
-
-    # Move the model to gpu is available
-    model.to(device)
-
-    losses = []
-    with torch.set_grad_enabled(True):
-        # Iterate over data.
-        for epoch_step, (inputs, labels, _) in enumerate(data_loader):
-
-            inputs = inputs.float().to(device)
-            labels = labels.long().to(device)
-            optimizer.zero_grad()
-
-            # forward pass
-            outputs = model(inputs)
-            outputs = outputs['out']
-            preds = torch.argmax(outputs, 1)
-
-            # cross-entropy loss
-            loss = criterion(outputs, labels)
-
-            # backward pass
-            loss.backward()
-            optimizer.step()
-
-            # Statistics
-            bs = inputs.size(0)  # current batch size
-            losses.append(loss.item())
-            corrects = torch.sum(preds == labels.data)
-            nvoid = int((labels == 19).sum())
-            acc = corrects.double() / (bs * res - nvoid)  # correct/(batch_size*resolution-voids)
-
-            # output training info
-            scheduler.step(np.mean(losses))
-
-    return np.mean(losses)
-
-
-def eval_epoch(model, data_loader, criterion, class_labels, valid_labels, maskColors, epoch, folder, device, args):
-    iou = iouCalc(class_labels, valid_labels, voidClass=19)
-    losses = []
-
-    # Set the model in evaluation mode
+def evaluate(model, dataset_loader, device, args):
     model.eval()
-    model.to(device)
-
+    resulted_frames = []
     with torch.no_grad():
-        for epoch_step, (input_images, target_labels, file_path) in enumerate(data_loader):
+        for i, (input_frame, original_frame) in tqdm(enumerate(dataset_loader)):
+            out = model(input_frame)
+            original_frame = original_frame.detach().numpy().squeeze(0)
+            pred_class = [COCO_INSTANCE_CATEGORY_NAMES[i] for i in list(out[0]['labels'].numpy())]
+            pred_boxes = [[(i[0], i[1]), (i[2], i[3])] for i in list(out[0]['boxes'].detach().numpy())]
+            pred_score = out[0]['scores'].detach().numpy()
 
-            # Forward path
-            input_images = input_images.float().to(device)
-            target_labels = target_labels.long().to(device)
+            if len(pred_boxes) > 0 and (pred_score > args.threshold).any():
+                pred_t = np.where(pred_score > args.threshold)[0][-1]
+                pred_boxes = pred_boxes[:pred_t+1]
+                pred_class = pred_class[:pred_t+1]
 
-            outs = model(input_images)["out"]
-            predicted_labels = torch.argmax(outs, dim=1)
+                # Draw the rectangles
+                original_frame = draw_boxes(original_frame, pred_boxes, pred_class, args)
+            resulted_frames.append(original_frame)
+            # show_frame(original_frame, str(i))
 
-            loss = criterion(outs, target_labels)
-            losses.append(loss.item())
+    return resulted_frames
 
-            # Calculating the IoU metrics
-            iou.evaluateBatch(predicted_labels, target_labels)
 
-            if epoch_step == 0 and maskColors is not None:
-                for i in range(input_images.size(0)):
-                    filename = os.path.splitext(os.path.basename(file_path[i]))[0]
-                    # Only save inputs and labels once
-
-                    if epoch == 0:
-
-                        img = visim(input_images[i, :, :, :], args)
-                        label = vislbl(target_labels[i, :, :], maskColors)
-                        if len(img.shape) == 3:
-                            print(img[:, :, ::-1].shape, folder + '/images/{}.png'.format(filename))
-                            cv2.imwrite(folder + '/images/{}.png'.format(filename), img[:, :, ::-1])
-                        else:
-                            cv2.imwrite(folder + '/images/{}.png'.format(filename), img)
-                        cv2.imwrite(folder + '/images/{}_gt.png'.format(filename), label[:, :, ::-1])
-
-                    # Save predictions
-                    pred = vislbl(predicted_labels[i, :, :], maskColors)
-                    cv2.imwrite(folder + '/images/{}_epoch_{}.png'.format(filename, epoch), pred[:, :, ::-1])
-
-        mean_IoU, nz_IoU = iou.outputScores()
-        return mean_IoU, nz_IoU, np.mean(losses)
-
+if __name__ == '__main__':
+    args = get_args()
+    model = get_model(args)
+    transforms = get_transforms(args)
+    ds = dataset(transforms, args)
+    data_loader = get_dataloader(ds, args)
+    device = get_device()
+    edited_frames = evaluate(model, data_loader, device, args)
+    print("showing the video")
+    save_video(edited_frames, fps=25)
+    show_video(edited_frames)
 

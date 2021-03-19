@@ -132,4 +132,12 @@ dmypy.json
 *.mp4
 .idea
 previous
-
+.avi
+*/.DS*
+.DS*
+*/sample_videos
+*/*.ipynb
+*/*.avi
+Videos
+.*
+.gitignore
