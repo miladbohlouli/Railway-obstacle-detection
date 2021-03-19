@@ -1,1 +1,0 @@
-# Semantic-Segmentation-with-transfer-learning
