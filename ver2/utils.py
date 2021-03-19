@@ -1,9 +1,7 @@
 import numpy as np
 import torch
-from PIL import ImageOps
 from torch.utils.data import DataLoader
 from torchvision import models
-from models import *
 import os
 import cv2
 from torchvision import transforms
@@ -62,9 +60,9 @@ def show_video(frames: list, name="frame"):
     cv2.destroyAllWindows()
 
 
-def save_video(frames, save_url="saved_video.avi", fps=25):
+def save_video(frames, args, fps=25):
     frame_width, frame_height = frames[0].shape[1], frames[0].shape[0]
-    out = cv2.VideoWriter(save_url, cv2.VideoWriter_fourcc("M", "J", "P", "G"), fps, (frame_width, frame_height))
+    out = cv2.VideoWriter(os.path.join(args.save_path, "saved_video.avi"), cv2.VideoWriter_fourcc("M", "J", "P", "G"), fps, (frame_width, frame_height))
     for frame in tqdm(frames):
         out.write(frame)
     out.release()
@@ -74,8 +72,8 @@ def get_transforms(args):
     return transforms.Compose([
         # transforms.Resize(args.image_size),
         transforms.ToTensor(),
-        # transforms.Normalize(args.dataset_mean,
-        #                      args.dataset_std)
+        transforms.Normalize(args.dataset_mean,
+                             args.dataset_std)
     ])
 
 

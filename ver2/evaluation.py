@@ -1,20 +1,17 @@
 import numpy as np
 from tqdm import tqdm
 import torch
-import sys
-from helpers import iouCalc, visim, vislbl
-import os
-import cv2
-from arguments import get_args
-from utils import get_model, get_dataloader, get_transforms, draw_boxes, get_device, show_frame, show_video, save_video
-from dataset import dataset, COCO_INSTANCE_CATEGORY_NAMES
+from utils import draw_boxes
+from dataset import COCO_INSTANCE_CATEGORY_NAMES
 
 
 def evaluate(model, dataset_loader, device, args):
+    model.to(device)
     model.eval()
     resulted_frames = []
     with torch.no_grad():
         for i, (input_frame, original_frame) in tqdm(enumerate(dataset_loader)):
+            input_frame = input_frame.to(device)
             out = model(input_frame)
             original_frame = original_frame.detach().numpy().squeeze(0)
             pred_class = [COCO_INSTANCE_CATEGORY_NAMES[i] for i in list(out[0]['labels'].numpy())]
@@ -29,20 +26,5 @@ def evaluate(model, dataset_loader, device, args):
                 # Draw the rectangles
                 original_frame = draw_boxes(original_frame, pred_boxes, pred_class, args)
             resulted_frames.append(original_frame)
-            # show_frame(original_frame, str(i))
 
     return resulted_frames
-
-
-if __name__ == '__main__':
-    args = get_args()
-    model = get_model(args)
-    transforms = get_transforms(args)
-    ds = dataset(transforms, args)
-    data_loader = get_dataloader(ds, args)
-    device = get_device()
-    edited_frames = evaluate(model, data_loader, device, args)
-    print("showing the video")
-    save_video(edited_frames, fps=25)
-    show_video(edited_frames)
-
