@@ -21,6 +21,9 @@ def get_dataloader(dataset, args):
 def get_model(args):
     if args.model == "fastercnn_resnet50_fpn":
         model = models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+
+    elif args.model == "maskrcnn_resnet50_fpn":
+        model = models.detection.maskrcnn_resnet50_fpn(pretrained=True)
     else:
         raise Exception("The specified model is not correct!!")
 
@@ -60,9 +63,11 @@ def show_video(frames: list, name="frame"):
     cv2.destroyAllWindows()
 
 
-def save_video(frames, args, fps=25):
+def save_video(frames, args, fps=10):
     frame_width, frame_height = frames[0].shape[1], frames[0].shape[0]
-    out = cv2.VideoWriter(os.path.join(args.save_path, "saved_video.avi"), cv2.VideoWriter_fourcc("M", "J", "P", "G"), fps, (frame_width, frame_height))
+    path = os.path.join(args.save_path, "saved_video.avi")
+    print(f"____saving the video in {path}___\n")
+    out = cv2.VideoWriter(path, cv2.VideoWriter_fourcc("M", "J", "P", "G"), fps, (frame_width, frame_height))
     for frame in tqdm(frames):
         out.write(frame)
     out.release()
@@ -72,8 +77,8 @@ def get_transforms(args):
     return transforms.Compose([
         # transforms.Resize(args.image_size),
         transforms.ToTensor(),
-        transforms.Normalize(args.dataset_mean,
-                             args.dataset_std)
+        # transforms.Normalize(args.dataset_mean,
+        #                      args.dataset_std)
     ])
 
 
@@ -82,7 +87,6 @@ def show_frame(frame, name="test", save=False, args=None):
     if save:
         cv2.imwrite(os.path.join(args.save_path, name), frame)
     plt.show()
-
 
 
 def convert_np_PIL(np_array: np.ndarray):

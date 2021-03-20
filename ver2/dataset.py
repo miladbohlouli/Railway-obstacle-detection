@@ -2,11 +2,11 @@ from torch.utils.data import Dataset
 from utils import read_video, convert_np_PIL
 import os
 import numpy as np
-from arguments import get_args
+from utils import show_video
 
 COCO_INSTANCE_CATEGORY_NAMES = [
             '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-            'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
+            'train', 'car', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
             'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
             'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
             'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
@@ -21,22 +21,22 @@ COCO_INSTANCE_CATEGORY_NAMES = [
 
 class dataset(Dataset):
     def __init__(self, transforms, args):
-        if os.path.isdir(args.source_video):
-            files_list = np.array(os.listdir(args.source_video))
+        if os.path.isdir(args.source_path):
+            files_list = np.array(os.listdir(args.source_path))
             files_checked = np.array([(".mp4" or ".mkv") in file_name for file_name in files_list])
             if files_checked.all() is False:
                 raise Exception("There is no files detected with the supported formats: .mkv, .mp4")
             else:
                 source_file_path = files_list[files_checked][0]
 
-        elif os.path.isfile(args.source_video):
-            source_file_path = args.source_video
+        elif os.path.isfile(args.source_path):
+            source_file_path = args.source_path
 
         else:
             raise Exception("The specified path or file for source_video is not valid!!")
 
         self.transforms = transforms
-        self.frames = read_video(source_file_path, show=False)
+        self.frames = read_video(source_file_path, show=False)[200:250]
 
     def __getitem__(self, idx):
         return self.transforms(convert_np_PIL(self.frames[idx])), self.frames[idx]
@@ -46,6 +46,5 @@ class dataset(Dataset):
 
 
 if __name__ == '__main__':
-    args = get_args()
-    # ds = dataset(args, None)
+    pass
 

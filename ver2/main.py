@@ -3,6 +3,7 @@ from arguments import get_args
 from dataset import dataset
 from evaluation import evaluate
 
+
 def main():
     args = get_args()
     model = get_model(args)
@@ -15,8 +16,8 @@ def main():
     print(f"____Running the model on {device}___\n")
     edited_frames = evaluate(model, data_loader, device, args)
 
-    print(f"____saving the video in {args.save}___\n")
     save_video(edited_frames, args, fps=25)
+
 
 if __name__ == '__main__':
     main()

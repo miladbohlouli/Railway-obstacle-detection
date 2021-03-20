@@ -4,7 +4,7 @@ def get_args():
     parser = argparse.ArgumentParser(description='VIPriors Segmentation baseline training script')
 
     # model architecture
-    parser.add_argument('--model', metavar='[fastercnn_resnet50_fpn]',
+    parser.add_argument('--model', metavar='[fastercnn_resnet50_fpn, maskrcnn_resnet50_fpn]',
                         default='fastercnn_resnet50_fpn', type=str, help='model')
 
     # data loading
