@@ -141,7 +141,8 @@ previous
 Videos
 .*
 .gitignore
-*/*.cfg
+*.cfg
 */*.weights
 */Old
 */model
+*.avi

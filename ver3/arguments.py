@@ -1,7 +1,15 @@
 import argparse
 
-conf_url = "https://github.com/pjreddie/darknet/blob/master/cfg/yolov3.cfg?raw=true"
-weights_url = "https://pjreddie.com/media/files/yolov3.weights"
+download_urls = {
+    "yolov3_conf": "https://github.com/pjreddie/darknet/blob/master/cfg/yolov3.cfg?raw=true",
+    "yolov3_weights": "https://pjreddie.com/media/files/yolov3.weights",
+    "yolov3-tiny_conf": "https://github.com/pjreddie/darknet/blob/master/cfg/yolov3-tiny.cfg?raw=true",
+    "yolov3-tiny_weights": "https://pjreddie.com/media/files/yolov3-tiny.weights",
+    "yolov4_conf": "https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4.cfg?raw=true",
+    "yolov4_weights": "https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v3_optimal/yolov4.weights",
+    "yolov4-tiny_conf": "https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg?raw=true",
+    "yolov4-tiny_weights": "https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights"
+}
 class_names = ['person', 'bicycle', 'car', 'motorbike', 'aeroplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
                'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
                'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
@@ -17,11 +25,9 @@ def get_args():
     parser = argparse.ArgumentParser(description='VIPriors Segmentation baseline training script')
 
     # model parameters
-    parser.add_argument('--model_conf', default='model/yolov3.cfg',
-                        type=str, help='Path to the model configuration')
 
-    parser.add_argument('--model_weights', default='model/yolov3.weights',
-                        type=str, help='Path to the model weights')
+    parser.add_argument('--model', default="yolov4-tiny", type=str,
+                        help="The type of the model which will be used")
 
     parser.add_argument('--roi_vicinity', default=5, type=int,
                         help="The percentage of the vicinity that will be added to the RoI")
@@ -34,13 +40,13 @@ def get_args():
                         help="The threshold used for non-maximum suppression")
 
     # source and destination directories
-    parser.add_argument('--video', metavar='path/to/source/video', type=str,
-                        help='path to the video source file')
-    parser.add_argument('--image', metavar='path/to/source/image', type=str,
-                        help='path to the image input')
+    parser.add_argument('--model_path', type=str, help='Path to the model directory')
 
-    parser.add_argument('--save_path', metavar='path/to/save_results', default='',
-                        type=str, help='path to results saved')
+    parser.add_argument('--video', metavar='path/to/source/video', type=str, help='path to the video source file')
+
+    parser.add_argument('--image', metavar='path/to/source/image', type=str, help='path to the image input')
+
+    parser.add_argument('--save_path', metavar='path/to/save_results', type=str, help='path to saving directory')
 
     # data augmentation hyper-parameters
     parser.add_argument('--image_size', default=[416, 416], nargs='+', type=int, help='image size during training')
