@@ -32,12 +32,17 @@ def get_args():
     parser.add_argument('--roi_vicinity', default=5, type=int,
                         help="The percentage of the vicinity that will be added to the RoI")
 
-    parser.add_argument('--conf_threshold', default=0.5, type=float,
+    parser.add_argument('--conf_threshold', default=0.7, type=float,
                         help="The threshold used for detection of the objects, the higher the "
                              "value of this parameter, the more uncertain objects will be omitted ")
 
     parser.add_argument('--nms_threshold', default=0.4, type=float,
                         help="The threshold used for non-maximum suppression")
+
+    parser.add_argument('--cons_threshold', default=3, type=int,
+                        help="This is the parameter that defines the conservativeness"
+                             "of the model, practically it is the number of the frames that the model will"
+                             "preserve its status in danger.")
 
     # source and destination directories
     parser.add_argument('--model_path', type=str, help='Path to the model directory')

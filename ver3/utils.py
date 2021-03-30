@@ -4,6 +4,18 @@ import requests
 import logging
 import sys
 from arguments import download_urls, class_names
+import numpy as np
+import joblib
+import imutils
+
+
+STATUS = {
+    "DANGER": (255, 0, 0),
+    "WARNING": (255, 0, 255),
+    "Safe": (0, 255, 0)
+}
+
+
 
 def get_model(args):
     logging.debug("___Initiating the model___")
@@ -118,3 +130,65 @@ def draw_preds(frame, classId, conf, left, top, right, bottom):
     cv.rectangle(frame, (left, top - round(1.5 * label_size[1])), (left + round(1.5 * label_size[0]), top + base_line),
                  (255, 255, 255), cv.FILLED)
     cv.putText(frame, label, (left, top), cv.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1)
+
+
+def get_status(outs, roi):
+    # intersection =
+    pass
+
+
+def get_region_of_interest(cap):
+    global pts
+    global img
+    pts = []
+    _, img = cap.read()
+    cv.namedWindow('image')
+    cv.setMouseCallback('image', draw_roi)
+    cv.imshow('image', img)
+
+    while True:
+        key = cv.waitKey(1) & 0xFF
+        if key == 27:
+            break
+        if key == ord("s"):
+            return pts
+    cv.destroyAllWindows()
+
+
+def draw_roi(event, x, y, flags, param):
+    img2 = img.copy()
+
+    if event == cv.EVENT_LBUTTONDOWN:  # Left click, select point
+        pts.append((x, y))
+
+    if event == cv.EVENT_LBUTTONDBLCLK:  # Right click to cancel the last selected point
+        pts.pop()
+
+    if event == cv.EVENT_MBUTTONDOWN:
+        mask = np.zeros(img.shape, np.uint8)
+        points = np.array(pts, np.int32)
+        points = points.reshape((-1, 1, 2))
+
+        mask = cv.polylines(mask, [points], True, (255, 255, 255), 2)
+        mask2 = cv.fillPoly(mask.copy(), [points], (255, 255, 255))  # for ROI
+        mask3 = cv.fillPoly(mask.copy(), [points], (0, 255, 0))  # for displaying images on the desktop
+
+        show_image = cv.addWeighted(src1=img, alpha=0.8, src2=mask3, beta=0.2, gamma=0)
+
+        cv.imshow("mask", mask2)
+        cv.imshow("show_img", show_image)
+
+        ROI = cv.bitwise_and(mask2, img)
+        cv.imshow("ROI", ROI)
+        cv.waitKey(0)
+
+    if len(pts) > 0:
+        # Draw the last point in pts
+        cv.circle(img2, pts[-1], 3, (0, 0, 255), -1)
+
+    if len(pts) > 1:
+        for i in range(len(pts) - 1):
+            cv.circle(img2, pts[i], 5, (0, 0, 255), -1)  # x ,y is the coordinates of the mouse click place
+            cv.line(img=img2, pt1=pts[i], pt2=pts[i + 1], color=(255, 0, 0), thickness=2)
+
+    cv.imshow('image', img2)
