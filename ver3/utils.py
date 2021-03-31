@@ -19,24 +19,29 @@ STATUS = {
 
 def get_model(args):
     logging.debug("___Initiating the model___")
-    model_configuration = os.path.join(args.model_path, args.model + ".cfg")
-    model_weights = os.path.join(args.model_path, args.model + ".weights")
 
-    if not os.path.isfile(model_configuration):
+    if args.model_path is None or not os.path.isfile(args.model_path):
         if not os.path.isdir("model"):
             os.mkdir("model")
+
+        model_configuration = os.path.join("model", args.model + ".cfg")
+        model_weights = os.path.join("model", args.model + ".weights")
+
+    else:
+        model_configuration = os.path.join(args.model_path, args.model + ".cfg")
+        model_weights = os.path.join(args.model_path, args.model + ".weights")
+
+    if not os.path.isfile(model_configuration):
         path = os.path.join("model", args.model + ".cfg")
         logging.info(f"___Downloading the configuration of the network in {path}___")
-        r = requests.get(download_urls[args.model], allow_redirects=True)
+        r = requests.get(download_urls[args.model+"_conf"], allow_redirects=True)
         open(path, "wb").write(r.content)
         model_configuration = path
 
     if not os.path.isfile(model_weights):
-        if not os.path.isdir("model"):
-            os.mkdir("model")
         path = os.path.join("model", args.model + ".weights")
         logging.info(f"___Downloading the weights of the network in {path}___")
-        r = requests.get(download_urls[args.model], allow_redirects=True)
+        r = requests.get(download_urls[args.model+"_weights"], allow_redirects=True)
         open(path, "wb").write(r.content)
         model_weights = path
 
@@ -74,7 +79,7 @@ def get_video_input_output(args):
             logging.info(f"___Saving in the default path instead: saved_results/")
 
         if not os.path.isdir("saved_results"):
-            os.mkdir("save_results")
+            os.mkdir("saved_results")
         output_file = os.path.join("saved_results", output_file)
 
     return cap, output_file

@@ -32,7 +32,7 @@ def get_args():
     parser.add_argument('--roi_vicinity', default=5, type=int,
                         help="The percentage of the vicinity that will be added to the RoI")
 
-    parser.add_argument('--conf_threshold', default=0.7, type=float,
+    parser.add_argument('--conf_threshold', default=0.6, type=float,
                         help="The threshold used for detection of the objects, the higher the "
                              "value of this parameter, the more uncertain objects will be omitted ")
 
