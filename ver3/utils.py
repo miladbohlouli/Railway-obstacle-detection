@@ -5,8 +5,6 @@ import logging
 import sys
 from arguments import download_urls, class_names
 import numpy as np
-import joblib
-import imutils
 
 
 STATUS = {
@@ -117,8 +115,6 @@ def get_output_names(net):
 
 
 def draw_pred(frame, classId, conf, left, top, right, bottom):
-    # Draw a bounding box.
-    cv.rectangle(frame, (left, top), (right, bottom), (255, 178, 50), 3)
 
     label = '%.2f' % conf
 
@@ -127,6 +123,7 @@ def draw_pred(frame, classId, conf, left, top, right, bottom):
         assert (classId < len(class_names))
         label = '%s:%s' % (class_names[classId], label)
 
+    cv.rectangle(frame, (left, top), (right, bottom), (255, 178, 50), 3)
     logging.debug(f"___Drawing the prediction for {label}___")
     # Display the label at the top of the bounding box
     label_size, base_line = cv.getTextSize(label, cv.FONT_HERSHEY_SIMPLEX, 0.5, 1)

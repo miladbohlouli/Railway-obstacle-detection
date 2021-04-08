@@ -2,7 +2,6 @@ from arguments import get_args
 import logging
 from utils import get_model, get_video_input_output, show_frame, get_video_writer
 from processing import process_input
-import cv2 as cv
 
 logging.basicConfig(level=logging.INFO)
 

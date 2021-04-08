@@ -40,21 +40,6 @@ def get_args():
     parser.add_argument('--model', default="yolov4-tiny", type=str,
                         help="The type of the model which will be used")
 
-    parser.add_argument('--roi_vicinity', default=5, type=int,
-                        help="The percentage of the vicinity that will be added to the RoI")
-
-    parser.add_argument('--conf_threshold', default=0.6, type=float,
-                        help="The threshold used for detection of the objects, the higher the "
-                             "value of this parameter, the more uncertain objects will be omitted ")
-
-    parser.add_argument('--nms_threshold', default=0.4, type=float,
-                        help="The threshold used for non-maximum suppression")
-
-    parser.add_argument('--cons_threshold', default=3, type=int,
-                        help="This is the parameter that defines the conservativeness"
-                             "of the model, practically it is the number of the frames that the model will"
-                             "preserve its status in danger.")
-
     # source and destination directories
     parser.add_argument('--model_path', type=str, help='Path to the model directory')
 
@@ -66,17 +51,25 @@ def get_args():
 
     # data augmentation hyper-parameters
     parser.add_argument('--image_size', default=[416, 416], nargs='+', type=int, help='image size during training')
-    parser.add_argument('--threshold', type=float, default=0.8, help="The threshold the boxes will be chosen with")
     parser.add_argument('--danger_threshold', default=0.1, help="This is the threshold which defines the danger zone")
     parser.add_argument('--inertia_threshold', default=20,
                         help="This is the inertia for danger and warning state lingering")
 
+    parser.add_argument('--conf_threshold', default=0.7, type=float,
+                        help="The threshold used for detection of the objects, the higher the "
+                             "value of this parameter, the more uncertain objects will be omitted ")
+
+    parser.add_argument('--nms_threshold', default=0.4, type=float,
+                        help="The threshold used for non-maximum suppression")
 
     # appearance parameters
     parser.add_argument('--text_size', default=3, help='Text size used for writing on the images')
     parser.add_argument('--text_thickness', default=3, help='Thickness of the written text')
     parser.add_argument('--rectangle_thickness', default=3, help='Thickness of the rectangle border')
     parser.add_argument('--color', default=(0, 255, 0), help='color for drawing on the image')
+
+    # Other parameters
+    parser.add_argument('--req_fps', default=60, help='required fps')
 
     args = parser.parse_args()
     return args

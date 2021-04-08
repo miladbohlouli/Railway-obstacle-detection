@@ -1,10 +1,9 @@
 import cv2 as cv
 import logging
-import os
 from utils import get_output_names, draw_pred, get_region_of_interest, draw_polylines, infer_status, STATUS
 import numpy as np
-
-# These are the available states for the system to be in
+import time
+from arguments import class_names
 
 
 def process_input(model, cap, video_writer, output_file, args):
@@ -26,6 +25,7 @@ def process_input(model, cap, video_writer, output_file, args):
 
     flag = True
     inertia_counter = 0
+    skip_frames = 0
     status = "WARNING"
     logging.debug(f"___The selected points include {roi_points}___")
     while cv.waitKey(1) < 0:
@@ -43,10 +43,25 @@ def process_input(model, cap, video_writer, output_file, args):
             cap.release()
             break
 
-        # Get output of the model
-        blob = cv.dnn.blobFromImage(frame, 1 / 255, (args.image_size[0], args.image_size[1]), [0, 0, 0], 1, crop=False)
-        model.setInput(blob)
-        outs = model.forward(get_output_names(model))
+        if skip_frames == 0:
+
+            # Get output of the model
+            start_time = time.time()
+            blob = cv.dnn.blobFromImage(frame, 1 / 255, (args.image_size[0], args.image_size[1]), [0, 0, 0], 1, crop=False)
+            model.setInput(blob)
+            outs = model.forward(get_output_names(model))
+
+
+            # This is the reference time which will be used to make the model real time by calculating the skip frames
+            #      between among the frames to make the model function in a descent way
+            reference_time = time.time() - start_time
+            skip_frames = int((args.req_fps * reference_time)) + 1
+            # One has been added to take into consideration the drawing and inferring process in to
+            #   real time process of the system
+
+        else:
+            logging.debug("___Skipping the frame to make the results real time___")
+            skip_frames -= 1
 
         # Infer the status regarding the roi and the detected objects
         momentary_status = post_process(frame, outs, roi_points, args)
@@ -65,18 +80,14 @@ def process_input(model, cap, video_writer, output_file, args):
             inertia_counter = 0
             flag = False
 
-        cv.putText(frame, "system status:" + status, (0, 20), cv.FONT_HERSHEY_SIMPLEX, 0.6, STATUS[status], 2, cv.LINE_AA)
-
-
-        # Todo: Use this parameter to make the model real-time
-        t, _ = model.getPerfProfile()
+        cv.putText(frame, "system status: " + status, (0, 20), cv.FONT_HERSHEY_SIMPLEX, 0.6, STATUS[status], 2,
+                   cv.LINE_AA)
+        cv.imshow("real time result", frame)
 
         if args.image:
             cv.imwrite(output_file, frame.astype(np.uint8))
         else:
             video_writer.write(frame.astype(np.uint8))
-
-        cv.imshow("test", frame)
 
 
 def post_process(frame, outs, roi, args):
@@ -104,12 +115,15 @@ def post_process(frame, outs, roi, args):
     status = "SAFE"
     logging.debug("___Checking the status of the region of interest___")
     for i in indices:
+
         i = i[0]
         box = boxes[i]
         left, top, width, height = box[0], box[1], box[2], box[3]
-        draw_pred(frame, class_ids[i], confidences[i], left, top, left + width, top + height)
 
-        status = infer_status(frame, [left, top, left + width, top + height], roi, args)
+        if not class_names[class_ids[i]] == "ignore":
+            draw_pred(frame, class_ids[i], confidences[i], left, top, left + width, top + height)
+
+            status = infer_status(frame, [left, top, left + width, top + height], roi, args)
 
         # If any objects on the roi, no need to consider the rest
         if status == "DANGER":
