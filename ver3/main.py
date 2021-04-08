@@ -16,5 +16,6 @@ def main():
     # process the input
     process_input(model, cap, video_writer, out_file, args)
 
+
 if __name__ == '__main__':
     main()

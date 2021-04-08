@@ -10,11 +10,10 @@ import imutils
 
 
 STATUS = {
-    "DANGER": (255, 0, 0),
+    "DANGER": (0, 0, 255),
     "WARNING": (255, 0, 255),
-    "Safe": (0, 255, 0)
+    "SAFE": (0, 255, 0)
 }
-
 
 
 def get_model(args):
@@ -117,7 +116,7 @@ def get_output_names(net):
     return [layers_names[i[0] - 1] for i in net.getUnconnectedOutLayers()]
 
 
-def draw_preds(frame, classId, conf, left, top, right, bottom):
+def draw_pred(frame, classId, conf, left, top, right, bottom):
     # Draw a bounding box.
     cv.rectangle(frame, (left, top), (right, bottom), (255, 178, 50), 3)
 
@@ -137,55 +136,37 @@ def draw_preds(frame, classId, conf, left, top, right, bottom):
     cv.putText(frame, label, (left, top), cv.FONT_HERSHEY_SIMPLEX, 0.75, (0, 0, 0), 1)
 
 
-def get_status(outs, roi):
-    # intersection =
-    pass
-
-
-def get_region_of_interest(cap):
+def get_region_of_interest(image):
     global pts
     global img
     pts = []
-    _, img = cap.read()
-    cv.namedWindow('image')
-    cv.setMouseCallback('image', draw_roi)
-    cv.imshow('image', img)
+    img = image.copy()
+    cv.namedWindow('Select region of interest')
+    cv.setMouseCallback('Select region of interest', draw_roi)
+    cv.imshow('Select region of interest', img)
 
     while True:
         key = cv.waitKey(1) & 0xFF
+        if key == ord("c"):
+            cv.destroyAllWindows()
+            return None
+
         if key == 27:
-            break
-        if key == ord("s"):
+            sys.exit()
+
+        if key == 13:
+            cv.destroyAllWindows()
             return pts
-    cv.destroyAllWindows()
 
 
 def draw_roi(event, x, y, flags, param):
     img2 = img.copy()
 
-    if event == cv.EVENT_LBUTTONDOWN:  # Left click, select point
+    if event == cv.EVENT_LBUTTONDOWN and flags != 17:   # Left click, select point
         pts.append((x, y))
 
-    if event == cv.EVENT_LBUTTONDBLCLK:  # Right click to cancel the last selected point
+    if event == cv.EVENT_LBUTTONDOWN and flags == 17:   # Shift + Left click --> remove the last selected point
         pts.pop()
-
-    if event == cv.EVENT_MBUTTONDOWN:
-        mask = np.zeros(img.shape, np.uint8)
-        points = np.array(pts, np.int32)
-        points = points.reshape((-1, 1, 2))
-
-        mask = cv.polylines(mask, [points], True, (255, 255, 255), 2)
-        mask2 = cv.fillPoly(mask.copy(), [points], (255, 255, 255))  # for ROI
-        mask3 = cv.fillPoly(mask.copy(), [points], (0, 255, 0))  # for displaying images on the desktop
-
-        show_image = cv.addWeighted(src1=img, alpha=0.8, src2=mask3, beta=0.2, gamma=0)
-
-        cv.imshow("mask", mask2)
-        cv.imshow("show_img", show_image)
-
-        ROI = cv.bitwise_and(mask2, img)
-        cv.imshow("ROI", ROI)
-        cv.waitKey(0)
 
     if len(pts) > 0:
         # Draw the last point in pts
@@ -196,4 +177,36 @@ def draw_roi(event, x, y, flags, param):
             cv.circle(img2, pts[i], 5, (0, 0, 255), -1)  # x ,y is the coordinates of the mouse click place
             cv.line(img=img2, pt1=pts[i], pt2=pts[i + 1], color=(255, 0, 0), thickness=2)
 
-    cv.imshow('image', img2)
+    cv.imshow('Select region of interest', img2)
+
+
+def draw_polylines(image, points):
+    points = np.array(points, np.int32)
+    points = points.reshape((-1, 1, 2))
+    image = cv.polylines(image, [points], True, (0, 0, 255), 2)
+    return image
+
+
+def infer_status(frame, object, roi, args):
+
+    points = np.array(roi, np.int32)
+    points = points.reshape((-1, 1, 2))
+
+    mask1 = np.zeros((frame.shape[0], frame.shape[1])).astype(np.int8)
+    # mask1 = np.zeros((frame.shape[0], frame.shape[1]))
+    mask1[object[1]:object[3], object[0]:object[2]] = 1
+
+    mask2 = np.zeros((frame.shape[0], frame.shape[1]))
+    mask2 = cv.fillPoly(mask2.copy(), [points], 1).astype(np.int8)
+
+    intersection = np.logical_and(mask1, mask2)
+    intersection_rate = np.sum(intersection) / np.sum(mask1)
+
+    if intersection_rate > args.danger_threshold:
+        status = "DANGER"
+    elif 0 < intersection_rate < args.danger_threshold:
+        status = "WARNING"
+    else:
+        status = "SAFE"
+
+    return status

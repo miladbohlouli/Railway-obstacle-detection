@@ -1,7 +1,7 @@
 import cv2 as cv
 import logging
 import os
-from utils import get_output_names, draw_preds, get_region_of_interest
+from utils import get_output_names, draw_pred, get_region_of_interest, draw_polylines, infer_status, STATUS
 import numpy as np
 
 # These are the available states for the system to be in
@@ -10,13 +10,30 @@ import numpy as np
 def process_input(model, cap, video_writer, output_file, args):
 
     # Selecting the region of interest
-    # roi = get_region_of_interest(cap)
-    # print(roi)
+    _, first_frame = cap.read()
 
+    logging.info("___Selecting the region of Interest___")
+    print("============================Controls for Region selection============================\n"
+          "+    Left mouse key:         add point\n"
+          "+    Shift + Left mouse key: remove the last point\n"
+          "+    Enter:                  Finalize the selected points\n"
+          "+    c:                      Clear the selections\n"
+          "======================================================================================\n")
+
+    roi_points = None
+    while roi_points is None:
+        roi_points = get_region_of_interest(first_frame)
+
+    flag = True
+    inertia_counter = 0
+    status = "WARNING"
+    logging.debug(f"___The selected points include {roi_points}___")
     while cv.waitKey(1) < 0:
         has_frame, frame = cap.read()
 
         frame = pre_process(frame)
+
+        frame = draw_polylines(frame, roi_points)
 
         # Check if the input is finished
         if not has_frame:
@@ -26,17 +43,32 @@ def process_input(model, cap, video_writer, output_file, args):
             cap.release()
             break
 
+        # Get output of the model
         blob = cv.dnn.blobFromImage(frame, 1 / 255, (args.image_size[0], args.image_size[1]), [0, 0, 0], 1, crop=False)
-
         model.setInput(blob)
-
         outs = model.forward(get_output_names(model))
 
+        # Infer the status regarding the roi and the detected objects
+        momentary_status = post_process(frame, outs, roi_points, args)
+
+        # Add the inertia technique to make the model more prone to noise
+        if momentary_status == "DANGER":
+            inertia_counter = 0
+            flag = True
+            status = momentary_status
+
+        elif momentary_status == "SAFE" and flag:
+            inertia_counter += 1
+
+        if inertia_counter == args.inertia_threshold:
+            status = "SAFE"
+            inertia_counter = 0
+            flag = False
+
+        cv.putText(frame, "system status:" + status, (0, 20), cv.FONT_HERSHEY_SIMPLEX, 0.6, STATUS[status], 2, cv.LINE_AA)
 
 
-        post_process(frame, outs, args)
-
-        # Todo: Use this parameter to make th model real-time
+        # Todo: Use this parameter to make the model real-time
         t, _ = model.getPerfProfile()
 
         if args.image:
@@ -47,7 +79,7 @@ def process_input(model, cap, video_writer, output_file, args):
         cv.imshow("test", frame)
 
 
-def post_process(frame, outs, args):
+def post_process(frame, outs, roi, args):
     frame_height = frame.shape[0]
     frame_width = frame.shape[1]
 
@@ -69,15 +101,21 @@ def post_process(frame, outs, args):
     logging.debug("___Applying the non-maximum suppression___")
     indices = cv.dnn.NMSBoxes(boxes, confidences, args.conf_threshold, args.nms_threshold)
 
-    logging.debug("___Drawing the detected objects___")
+    status = "SAFE"
+    logging.debug("___Checking the status of the region of interest___")
     for i in indices:
         i = i[0]
         box = boxes[i]
-        left = box[0]
-        top = box[1]
-        width = box[2]
-        height = box[3]
-        draw_preds(frame, class_ids[i], confidences[i], left, top, left + width, top + height)
+        left, top, width, height = box[0], box[1], box[2], box[3]
+        draw_pred(frame, class_ids[i], confidences[i], left, top, left + width, top + height)
+
+        status = infer_status(frame, [left, top, left + width, top + height], roi, args)
+
+        # If any objects on the roi, no need to consider the rest
+        if status == "DANGER":
+            break
+
+    return status
 
 
 def pre_process(frame):

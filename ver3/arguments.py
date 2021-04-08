@@ -10,7 +10,8 @@ download_urls = {
     "yolov4-tiny_conf": "https://raw.githubusercontent.com/AlexeyAB/darknet/master/cfg/yolov4-tiny.cfg?raw=true",
     "yolov4-tiny_weights": "https://github.com/AlexeyAB/darknet/releases/download/darknet_yolo_v4_pre/yolov4-tiny.weights"
 }
-class_names = ['person', 'bicycle', 'car', 'motorbike', 'aeroplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
+
+original_class_names = ['person', 'bicycle', 'car', 'motorbike', 'aeroplane', 'bus', 'train', 'truck', 'boat', 'traffic light',
                'fire hydrant', 'stop sign', 'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
                'elephant', 'bear', 'zebra', 'giraffe', 'backpack', 'umbrella', 'handbag', 'tie', 'suitcase', 'frisbee',
                'skis', 'snowboard', 'sports ball', 'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard',
@@ -19,6 +20,16 @@ class_names = ['person', 'bicycle', 'car', 'motorbike', 'aeroplane', 'bus', 'tra
                'pottedplant', 'bed', 'diningtable', 'toilet', 'tvmonitor', 'laptop', 'mouse', 'remote', 'keyboard',
                'cell phone', 'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'book', 'clock', 'vase',
                'scissors', 'teddy bear', 'hair drier', 'toothbrush']
+
+class_names = ['person', 'vehicle', 'vehicle', 'bike', 'vehicle', 'vehicle', 'train', 'vehicle', 'boat', 'ignore',
+               'ignore', 'ignore', 'ignore', 'ignore', 'animal', 'animal', 'animal', 'animal', 'animal', 'animal',
+               'animal', 'animal', 'animal', 'animal', 'other', 'other', 'other', 'ignore', 'other', 'other',
+               'ignore', 'other', 'other', 'other', 'other', 'other', 'other', 'other',
+               'other', 'other', 'other', 'other', 'other', 'other', 'other', 'other', 'other', 'other',
+               'other', 'other', 'other', 'other', 'other', 'other', 'other', 'other', 'other', 'other',
+               'ignore', 'ignore', 'ignore', 'ignore', 'ignore', 'other', 'other', 'other', 'other',
+               'other', 'ignore', 'ignore', 'ignore', 'ignore', 'ignore', 'other', 'ignore', 'ignore',
+               'other', 'other', 'other', 'other']
 
 
 def get_args():
@@ -55,7 +66,11 @@ def get_args():
 
     # data augmentation hyper-parameters
     parser.add_argument('--image_size', default=[416, 416], nargs='+', type=int, help='image size during training')
-    parser.add_argument('--threshold', type=float, default=0.9, help="The threshold the boxes will be chosen with")
+    parser.add_argument('--threshold', type=float, default=0.8, help="The threshold the boxes will be chosen with")
+    parser.add_argument('--danger_threshold', default=0.1, help="This is the threshold which defines the danger zone")
+    parser.add_argument('--inertia_threshold', default=20,
+                        help="This is the inertia for danger and warning state lingering")
+
 
     # appearance parameters
     parser.add_argument('--text_size', default=3, help='Text size used for writing on the images')
