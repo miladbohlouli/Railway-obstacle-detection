@@ -33,8 +33,6 @@ def process_input(model, cap, video_writer, output_file, args):
 
         frame = pre_process(frame)
 
-        frame = draw_polylines(frame, roi_points)
-
         # Check if the input is finished
         if not has_frame:
             logging.info("___Done processing the input___")
@@ -64,6 +62,8 @@ def process_input(model, cap, video_writer, output_file, args):
 
         # Infer the status regarding the roi and the detected objects
         momentary_status = post_process(frame, outs, roi_points, args)
+
+        # frame = draw_polylines(frame, roi_points)
 
         # Add the inertia technique to make the model more prone to noise
         if momentary_status == "DANGER":
@@ -123,10 +123,6 @@ def post_process(frame, outs, roi, args):
             draw_pred(frame, class_ids[i], confidences[i], left, top, left + width, top + height)
 
             status = infer_status(frame, [left, top, left + width, top + height], roi, args)
-
-        # If any objects on the roi, no need to consider the rest
-        if status == "DANGER":
-            break
 
     return status
 
