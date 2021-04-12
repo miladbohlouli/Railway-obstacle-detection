@@ -55,7 +55,7 @@ def get_args():
     parser.add_argument('--inertia_threshold', default=20,
                         help="This is the inertia for danger and warning state lingering")
 
-    parser.add_argument('--conf_threshold', default=0.7, type=float,
+    parser.add_argument('--conf_threshold', default=0.6, type=float,
                         help="The threshold used for detection of the objects, the higher the "
                              "value of this parameter, the more uncertain objects will be omitted ")
 

@@ -51,7 +51,6 @@ def process_input(model, cap, video_writer, output_file, args):
             model.setInput(blob)
             outs = model.forward(get_output_names(model))
 
-
             # This is the reference time which will be used to make the model real time by calculating the skip frames
             #      between among the frames to make the model function in a descent way
             reference_time = time.time() - start_time
