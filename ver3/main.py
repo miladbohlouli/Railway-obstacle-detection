@@ -17,7 +17,7 @@ def main():
     predicted_states = process_input(model, cap, video_writer, out_file, args)
     labels = read_labels(args)
 
-    # calculate the qualitative measures
+    # calculate the quantitative measures
     cal_metrics(predicted_states, labels)
 
 
