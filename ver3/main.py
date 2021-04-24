@@ -2,7 +2,6 @@ from arguments import get_args
 import logging
 from utils import get_model, get_video_input_output, get_video_writer, read_labels, cal_metrics
 from processing import process_input
-from sklearn.metrics import f1_score, accuracy_score
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,7 +17,8 @@ def main():
     labels = read_labels(args)
 
     # calculate the quantitative measures
-    cal_metrics(predicted_states, labels)
+    if labels is not None:
+        cal_metrics(predicted_states, labels)
 
 
 if __name__ == '__main__':
