@@ -5,7 +5,7 @@ import logging
 import sys
 from arguments import download_urls, class_names
 import numpy as np
-
+from sklearn.metrics import accuracy_score, f1_score
 
 STATUS = {
     "DANGER": (0, 0, 255),
@@ -207,3 +207,25 @@ def infer_status(frame, object, roi, args):
         status = "SAFE"
 
     return status
+
+
+def read_labels(args):
+    path = os.path.join(args.video.split("/")[0], args.video[:-4].split("/")[1] + "_labels.txt")
+    if not os.path.isfile(path):
+        logging.info("___The labels file could not be found___")
+        logging.info("___The metrics calculation omitted__")
+        return None
+    else:
+        labels_file = open(path, "r")
+        labels = [label.replace("\n", "").lower() for label in labels_file.readlines()]
+        logging.info(f"___read {len(labels)} labels from {path}___")
+        return labels
+
+
+def cal_metrics(predicted_labels, true_labels):
+    max_index = min(len(predicted_labels), len(true_labels))
+    logging.info(f"___Calculating the evaluation metrics for {max_index} frames___")
+    acc = accuracy_score(true_labels[:max_index], predicted_labels[:max_index], normalize=True)
+    print(f"Calculated accuracy: {acc:.3f}")
+    f1 = f1_score(true_labels[:max_index], predicted_labels[:max_index], labels=["safe", "danger"], pos_label="danger")
+    print(f"Calculated f1_score: {f1:.3f}")

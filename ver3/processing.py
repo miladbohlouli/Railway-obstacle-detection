@@ -28,6 +28,7 @@ def process_input(model, cap, video_writer, output_file, args):
     skip_frames = 0
     status = "WARNING"
     logging.debug(f"___The selected points include {roi_points}___")
+    predicted_states = []
     while cv.waitKey(1) < 0:
         has_frame, frame = cap.read()
 
@@ -41,7 +42,7 @@ def process_input(model, cap, video_writer, output_file, args):
             cap.release()
             break
 
-        if skip_frames == 0:
+        if skip_frames <= 0:
 
             # Get output of the model
             start_time = time.time()
@@ -50,7 +51,7 @@ def process_input(model, cap, video_writer, output_file, args):
             outs = model.forward(get_output_names(model))
 
             # This is the reference time which will be used to make the model real time by calculating the skip frames
-            #      between among the frames to make the model function in a descent way
+            #      among the frames to make the model function in a descent way
             reference_time = time.time() - start_time
             skip_frames = int((args.req_fps * reference_time)) + 1
             # One has been added to take into consideration the drawing and inferring process in to
@@ -62,8 +63,6 @@ def process_input(model, cap, video_writer, output_file, args):
 
         # Infer the status regarding the roi and the detected objects
         momentary_status = post_process(frame, outs, roi_points, args)
-
-        # frame = draw_polylines(frame, roi_points)
 
         # Add the inertia technique to make the model more prone to noise
         if momentary_status == "DANGER":
@@ -79,6 +78,11 @@ def process_input(model, cap, video_writer, output_file, args):
             inertia_counter = 0
             flag = False
 
+        if status == "WARNING":
+            predicted_states.append("SAFE".lower())
+        else:
+            predicted_states.append(status.lower())
+
         cv.putText(frame, "system status: " + status, (0, 20), cv.FONT_HERSHEY_SIMPLEX, 0.6, STATUS[status], 2,
                    cv.LINE_AA)
         cv.imshow("real time result", frame)
@@ -87,6 +91,8 @@ def process_input(model, cap, video_writer, output_file, args):
             cv.imwrite(output_file, frame.astype(np.uint8))
         else:
             video_writer.write(frame.astype(np.uint8))
+
+    return predicted_states
 
 
 def post_process(frame, outs, roi, args):

@@ -1,7 +1,8 @@
 from arguments import get_args
 import logging
-from utils import get_model, get_video_input_output, show_frame, get_video_writer
+from utils import get_model, get_video_input_output, get_video_writer, read_labels, cal_metrics
 from processing import process_input
+from sklearn.metrics import f1_score, accuracy_score
 
 logging.basicConfig(level=logging.INFO)
 
@@ -13,7 +14,11 @@ def main():
     video_writer = get_video_writer(cap, out_file)
 
     # process the input
-    process_input(model, cap, video_writer, out_file, args)
+    predicted_states = process_input(model, cap, video_writer, out_file, args)
+    labels = read_labels(args)
+
+    # calculate the qualitative measures
+    cal_metrics(predicted_states, labels)
 
 
 if __name__ == '__main__':
